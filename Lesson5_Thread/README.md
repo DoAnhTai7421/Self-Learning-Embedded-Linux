@@ -1,0 +1,1 @@
+- EX1_Thread: Learning about Thread, using pthread_create(), pthread_self() và pthread_equal() to create, execute and manage multi-threads.
