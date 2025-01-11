@@ -1,0 +1,3 @@
+EX1: Learning about Command-Line Arguments (argc, argv[])
+EX2: Learning about Process(child-process & parent-process), using system-call fork() to create the child-process
+EX3: Using exec family functions to create a new process from a running process (or its children)
