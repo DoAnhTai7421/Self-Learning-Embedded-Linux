@@ -1,0 +1,1 @@
+Using Makefile to create and manage files, libraries (shared lib or static lib)
