@@ -1,0 +1,1 @@
+Learning about some system calls, practice opening, writing and closing files using system calls: open(), write() and close()
