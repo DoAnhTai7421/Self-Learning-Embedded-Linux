@@ -1,0 +1,2 @@
+- EX1: Learning about managing process, using system-call fork(), exit() and wait() to manage child/parent process
+- EX2: Learning about Orphane/Zombie process, create safe-fork file by signal
