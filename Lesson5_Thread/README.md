@@ -1,1 +1,3 @@
 - EX1_Thread: Learning about Thread, using pthread_create(), pthread_self() và pthread_equal() to create, execute and manage multi-threads.
+- EX2_Manage-Thread: Using pthread_exit(), pthread_join(), pthread_cancel() và pthread_detach() to manage multi-threads (or zombie threads)
+- EX3_Mutex: Using mutex (lock & unlock) to access shared resources by threads
