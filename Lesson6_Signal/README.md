@@ -1,0 +1,2 @@
+- EX1.Signal: Using system call such as signal() and kill() to manage thread/process
+- EX2.Blocking-Signal: using blocking and unblocking signal to manage any signal in kill()
