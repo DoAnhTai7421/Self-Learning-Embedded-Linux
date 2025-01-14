@@ -1,0 +1,3 @@
+- EX1_Unix-Stream: Make Socket with UNIX Domain, Stream Type to communicate between server and client
+- EX2_Unix-Dgram: Make Socket with UNIX Domain, Datagram Type to communicate between server and client
+- EX3_IPv4-Stream: Make Socket with Internet IPv4 Domain, Stream Type to communicate between server and client (chat func)
