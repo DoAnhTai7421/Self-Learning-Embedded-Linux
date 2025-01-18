@@ -1,0 +1,3 @@
+- EX1_Pipes: Using simple pipes to write(), read() and display data
+- EX2_Related-Pipes: Using pipes (related pipes) to communicate between related process (child and parent)
+- EX3_FIFOs-Named-Pipes: Using FIFO to create 2 apps (producer and consumer) and transmit/receive data between them.
