@@ -1,0 +1,1 @@
+- EX1_POSIX-Message-Queue: Create a POSIX Message Queue and display its attributions
