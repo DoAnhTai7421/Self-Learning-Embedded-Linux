@@ -1,0 +1,112 @@
+- 4 thành phần của HĐH Linux: https://viblo.asia/p/linux-boot-process-a-z-1Je5E6XLKnL 
+    1. U-boot: Bộ nạp khởi động
+    2. Kernel: khoảng 80% là chứa các trình điều khiển (driver)
+    3. Rootfs: Nơi chứa các chương trình (ls, cd,...)
+    4. Toolchain/Applications: công cụ để biên dịch program tạo file thực thi (vd: gcc)
+
+- Native-Compile
+    Build source từ máy nào thì chương trình sẽ chạy được luôn trên máy đó.
+Ex: Build x86 thì program sẽ chạy được trên máy x86
+    Build Arm thì chương trình nó sẽ chạy được trên Arm
+    
+- Cross-Compile
+    Build source từ máy có kiến trúc A nào đấy và chạy trên một máy có kiến trúc B.
+Ex: Build x86 nhưng file thực thi lại chạy được trên Arm
+    Build Arm nhưng file thực thi lại chạy được trên x86
+
+- Kiểm tra kiến trúc của máy:
+    + which ls : kiểm tra đường dẫn thư mục ls
+    + file <ls path>: hiển thị kiến trúc của máy
+
+- Cài gcc cho Arm: 
+    sudo apt install gcc-arm-linux-gnueabi*
+
+
+__ ** BUILT BBB SOURCE ** __
+Link: https://forum.digikey.com/t/debian-getting-started-with-the-beaglebone-black/12967
+- Tải và cài ARM Gross Compiler:
+    + Tải tệp toolchain từ đường dẫn Internet (wget -c https://mirrors.edge.kernel.org/pub/tools/crosstool/files/bin/x86_64/11.3.0/x86_64-gcc-11.3.0-nolibc-arm-linux-gnueabi.tar.xz)
+    + Giải nén tệp (tar -xf x86_64-gcc-11.3.0-nolibc-arm-linux-gnueabi.tar.xz)
+    + Đặt biến CC trỏ đến công cụ biên dịch C dành cho ARM: export CC=`pwd`/gcc-11.3.0-nolibc/arm-linux-gnueabi/bin/arm-linux-gnueabi-
+    + Test gross Compiler: ${CC}gcc --version
+
+- Tải Bootloader - Uboot:
+    + Tải các gói phần mềm cần thiết để Built trên Linux: sudo apt install bison build-essential flex swig
+    + Tải mã nguồn của Uboot về: git clone -b v2022.04 https://github.com/u-boot/u-boot --depth=1
+    + cd vào u-boot
+    + Cập nhật mã nguồn, bản vá: git pull --no-edit https://git.beagleboard.org/beagleboard/u-boot.git v2022.04-bbb.io-am335x-am57xx
+
+    * Cấu hình và Build Uboot:
+    + Làm sạch môi trường chuẩn bị cho cấu hình mới: make ARCH=arm CROSS_COMPILE=${CC} distclean
+    + Thiết lập cấu hình mặc định: make ARCH=arm CROSS_COMPILE=${CC} am335x_evm_defconfig
+    + Built (Biên dịch mã nguồn) Uboot: make ARCH=arm CROSS_COMPILE=${CC}
+
+- Tải và cấu hình Linux Kernel:
+    + Trở lại thư mục gốc: cd ..
+    + Tải mã nguồn Kernel (Nên sử dụng Version 5.4): git clone https://github.com/RobertCNelson/bb-kernel ./kernelbuildscripts 
+    + cd vào /kernelbuildscripts
+    + Tạo một nhánh mới có tên là tmp: git checkout origin/am33x-v5.4 -b tmp
+    + Build Kernel: ./build_kernel.sh
+    ## Lưu ý khi build Kernel: 
+        . Cài đặt công cụ lz4: sudo apt update; sudo apt install lz4
+        . Đảm bảo các công cụ khác được cài đặt: sudo apt install \
+                                                            build-essential \
+                                                            bison \
+                                                            flex \
+                                                            libssl-dev \
+                                                            cpio \
+                                                            lz4 \
+                                                            xz-utils
+        . Cài đặt một số gói phụ thuộc: sudo apt-get update; sudo apt-get install gettext pkg-config libmpc-dev u-boot-tools libncurses-dev
+        . Cài đặt công cụ lzop để nén ảnh kernel (zImage): sudo apt-get update; sudo apt-get install lzop
+
+- Cấu hình Root File System:
+    + Tải file hệ thống Debian cho kiến trúc ARM: wget -c https://rcn-ee.com/rootfs/eewiki/minfs/debian-11.5-minimal-armhf-2022-10-06.tar.xz
+    + Giải nén file vừa tải: tar xf debian-11.5-minimal-armhf-2022-10-06.tar.xz
+    + (cd debian-11.5-minimal-armhf-2022-10-06; tar -xvf armhf-rootfs-debian-bullseye.tar)
+
+- Cấu hình, thiết lập thẻ nhớ microSD:
+    + Kiểm tra thông tin thiết bị: lsblk; -> thẻ nhớ thường được kí hiệu là sdb (sda/sdc)
+    + Thiết lập biến môi trường: export DISK=/dev/sdb
+    + Xóa bảng phân vùng và nhãn trên thẻ microSD: sudo dd if=/dev/zero of=${DISK} bs=1M count=10
+    + Cài đặt và ghi các tệp liên quan đến bootloader (MLO và u-boot-dtb.img) vào thẻ nhớ SD:
+        sudo dd if=./u-boot/MLO of=${DISK} count=2 seek=1 bs=128k
+        sudo dd if=./u-boot/u-boot-dtb.img of=${DISK} count=4 seek=1 bs=384k
+    + Kiểm tra version của sfdisk: sudo sfdisk --version
+    + Tạo bảng phân vùng cho thẻ nhớ: 
+        sudo sfdisk ${DISK} <<-__EOF__
+        4M,,L,*
+        __EOF__
+    
+    +Format Partition - Định dạng lại chuẩn của thẻ nhớ:
+        . sudo mkfs.ext4 -V
+        . sudo mkfs.ext4 -L rootfs -O ^metadata_csum,^64bit ${DISK}1
+    
+    + Gắn kết phân vùng sdb với một thư mục (Mount Partition):
+        . Tạo thư mục rootfs: sudo mkdir -p /media/rootfs/
+        . Gắn phân vùng ổ đĩa vào thư mục rootfs: sudo mount ${DISK}1 /media/rootfs/
+    
+- Backup Bootloader:
+    + sudo mkdir -p /media/rootfs/opt/backup/uboot/
+    + sudo cp -v ./u-boot/MLO /media/rootfs/opt/backup/uboot/
+    + sudo cp -v ./u-boot/u-boot-dtb.img /media/rootfs/opt/backup/uboot/
+
+- Install Kernel and Root File System:
+    + Kiểm tra version Kernel bằng cách mở: kernelbuildscripts/KERNEL/Makefile; hoặc cat kernelbuildscripts/kernel_version
+    + export kernel_version=5.X.Y-Z
+    + Copy Root File System
+        . sudo tar xfvp ./debian-*-*-armhf-*/armhf-rootfs-*.tar -C /media/rootfs/
+        . sync
+    + Set uname_r in /boot/uEnv.txt:
+        . sudo sh -c "echo 'uname_r=${kernel_version}' >> /media/rootfs/boot/uEnv.txt"
+    + Copy Kernel Image:
+        . sudo cp -v ./kernelbuildscripts/deploy/${kernel_version}.zImage /media/rootfs/boot/vmlinuz-${kernel_version}
+    + Copy Kernel Device Tree Binaries:
+        . sudo mkdir -p /media/rootfs/boot/dtbs/${kernel_version}/
+        . sudo tar xfv ./kernelbuildscripts/deploy/${kernel_version}-dtbs.tar.gz -C /media/rootfs/boot/dtbs/${kernel_version}/
+    + Copy Kernel Modules:
+        . sudo tar xfv ./kernelbuildscripts/deploy/${kernel_version}-modules.tar.gz -C /media/rootfs/
+    + File Systems Table (/etc/fstab):
+        . sudo sh -c "echo '/dev/mmcblk0p1  /  auto  errors=remount-ro  0  1' >> /media/rootfs/etc/fstab"
+
+... Những cái phía sau là tùy chọn
